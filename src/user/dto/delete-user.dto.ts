@@ -5,3 +5,4 @@ export class DeleteUserDto {
     @IsNotEmpty({ message: 'ID is required' })
     id: number;
 }
+

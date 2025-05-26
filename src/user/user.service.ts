@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './user.entity';
 
 @Injectable()
@@ -10,30 +11,25 @@ export class UserService {
         private readonly userRepository: Repository<User>,
     ) {}
 
-    // add a new user
-    async create(user: User): Promise<User> {
-        const newUser = this.userRepository.create(user);
-        return await this.userRepository.save(newUser);
+    // create a new user
+    async createUser(createUserDto: CreateUserDto) {
+        const newUser = this.userRepository.create(createUserDto);
+        await this.userRepository.save(newUser);
+        return newUser;
     }
 
-    // delete a user
-    async delete(id: number): Promise<User | null> {
+    // delete a user by id
+    async delete(id: number): Promise<User> {
         const user = await this.userRepository.findOne({ where: { id } });
         if (!user) {
-            return null;
+            throw new BadRequestException('User not found');
         }
-        await this.userRepository.delete(id);
+        await this.userRepository.remove(user);
         return user;
     }
 
-    async login(email: string, password: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({ where: { email } });
-            if (!user) {
-                return null;
-            }
-            if (user.password !== password) {
-                return null;
-            }
-        return user;
+    // find all users
+    async findAll(): Promise<User[]> {
+        return await this.userRepository.find();
     }
 }

@@ -1,10 +1,13 @@
 import {
+    BeforeInsert,
     Column,
     CreateDateColumn,
     Entity,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
+
+import * as bcrypt from 'bcrypt';
 
 @Entity("user")
 export class User {
@@ -24,6 +27,13 @@ export class User {
     // automatically set the timestamp when the user is updated
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @BeforeInsert()
+    // hash the password before inserting it into the database
+    async hashPassword() {
+        const saltRounds = 10;
+        this.password = await bcrypt.hash(this.password, saltRounds);
+    }
 }
 
 
