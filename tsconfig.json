@@ -20,6 +20,7 @@
   },
   "include": [
     "src/**/*.ts",
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "./node_modules/@types/**/*.d.ts",
   ]
 }
