@@ -1,4 +1,4 @@
-import { Body, Injectable, Req, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
@@ -17,29 +17,39 @@ export class AuthService {
     ) {}
     
     // validate user credentials
-    async validateUser(email: string, password: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({ where: { email } });
+    async validateUser(login: string, password: string): Promise<User> {
+        const isEmail = login.includes('@');
+
+        const user = await this.userRepository.findOne({
+            where: isEmail ? { email: login } : { username: login },
+        });
+
         if (!user) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new UnauthorizedException('Invalid credentials');
         }
+
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new UnauthorizedException('Invalid credentials');
         }
+
         return user;
-    }
+        }
+    
     // register a new user and hash the password
-    async signup(@Body() signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string } }> {
-        const { email, password } = signupDto;
+    async signup(signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string; username: string } }> {
+        const { email, password, username } = signupDto;
         const newUser = this.userRepository.create({
             email,
             password,
+            username,
         });
         await this.userRepository.save(newUser);
 
         return {
             message: 'User registered successfully',
             user: {
+                username: newUser.username,
                 id: newUser.id,
                 email: newUser.email,
             },
@@ -47,28 +57,27 @@ export class AuthService {
     }
 
     // login a user and check the password
-    async login(@Req() req: Request, @Body() loginDto: LoginUserDto): Promise<{ message: string, session: any }> {
-        const { email, password } = loginDto;
-        // find if the user exists by email
-        const user = await this.validateUser(email, password);
+    async login(req: Request, loginDto: LoginUserDto): Promise<{ message: string; session: any }> {
+        const { login, password } = loginDto;
 
-        if (!user) {
-            throw new UnauthorizedException("Invalid email or password");
-        }
+        const user = await this.validateUser(login, password);
 
-        // store user information in the session
         req.session.user = {
             id: user.id,
             email: user.email,
+            username: user.username,
         };
+
+        req.session.save(() => {}); // optionally handle error here
 
         return {
             message: 'Login successful',
             session: req.session,
+        };
         }
-    }
 
-    async logout(@Req() request: Request): Promise<{ message: string, session: any }> {
+
+    async logout(request: Request): Promise<{ message: string, session: any }> {
         return new Promise((resolve, reject) => {
             request.session.destroy((err) => {
                 if (err) {
@@ -83,12 +92,12 @@ export class AuthService {
         });
     }
 
-    getProfile(@Req() req: Request): { user: { id: number; email: string } } {
+    getProfile(req: Request): { user: { id: number; email: string; username: string } } {
         const user = req.session.user;
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
-        return { user: { id: user.id, email: user.email } };
+        return { user: { id: user.id, email: user.email, username: user.username } };
     }
 }
 

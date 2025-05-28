@@ -21,6 +21,51 @@ export class UserController {
         };
     }
 
+    @Get('findByID')
+    async findById(@Body() body: { id: number }): Promise<{ message: string; user: { id: number; email: string } }> {
+        const user = await this.userService.findById(body.id);
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return {
+            message: `User with ID ${user.id} retrieved successfully`,
+            user: {
+                id: user.id,
+                email: user.email,
+            },
+        };
+    }
+
+    @Get('findByUsername')
+    async findByUsername(@Body() body: { username: string }): Promise<{ message: string; user: { username: string; email: string } }> {
+        const user = await this.userService.findByUsername(body.username);
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return {
+            message: `User with username ${user.username} retrieved successfully`,
+            user: {
+                username: user.username,
+                email: user.email,
+            },
+        };
+    }
+
+    @Get('findByEmail')
+    async findByEmail(@Body() body: { email: string }): Promise<{ message: string; user: { id: number, email: string } }> {
+        const user = await this.userService.findByEmail(body.email)
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return {
+            message: `User with email ${user.email} retrieved successfully`,
+            user: {
+                id: user.id,
+                email: user.email,
+            },
+        }
+    }
+
     @Post('delete')
     async delete(@Body() deleteUserDto: {id: number}): Promise<{ message: string; user: { id: number; email: string } }>  {
         const user = await this.userService.delete(deleteUserDto.id);

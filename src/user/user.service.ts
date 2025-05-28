@@ -32,4 +32,31 @@ export class UserService {
     async findAll(): Promise<User[]> {
         return await this.userRepository.find();
     }
+
+    // find a user by id
+    async findById(id: number): Promise<{ id: number; email: string }> {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return user;
+    }
+
+    // find a user by username
+    async findByUsername(username: string): Promise<{ username: string; email: string}> {
+        const user = await this.userRepository.findOne({ where: {username} });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return user;
+    }
+
+    // find a user by email
+    async findByEmail(email: string): Promise<{ id: number; email: string}> {
+        const user = await this.userRepository.findOne({ where: {email} });
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        return user;
+    }
 }
