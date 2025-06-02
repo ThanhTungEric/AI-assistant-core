@@ -1,8 +1,17 @@
 import { Body, Controller, Get, NotFoundException, Post, Query, Req } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { Request } from 'express';
 import { User } from '../user/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { MessageResponseDto } from './dto/message-response.dto';
 import { MessageService } from './message.service';
+
+@ApiResponse({
+    status: 201,
+    description: 'Message created successfully',
+    type: MessageResponseDto,
+})
 
 @Controller('users/message')
 export class MessageController {
@@ -20,20 +29,21 @@ export class MessageController {
         }
 
         const message = await this.messageService.createMessage(body.topicId, body.content, body.sender, user);
-        return {
-            message: 'Message created successfully',
-            data: {
+        
+        const responseDto = plainToInstance(MessageResponseDto, {
                 id: message.id,
                 content: message.content,
                 sender: message.sender,
-                topic: {
-                    id: message.topic.id,
-                    title: message.topic.title,
-                    },
+                topicId: message.topic.id,
+                topicTitle: message.topic.title,
                 createdAt: message.createdAt,
-            },
+        });
+
+        return {
+            message: 'Message created successfully',
+            data: responseDto,
             user: user.username,
-        }
+        };
     }
 
     
