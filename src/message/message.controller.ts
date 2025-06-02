@@ -1,17 +1,25 @@
-import { Body, Controller, Get, NotFoundException, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Post, Query, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { User } from '../user/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageService } from './message.service';
 
-@Controller('messages')
+@Controller('users/message')
 export class MessageController {
     constructor(private readonly messageService: MessageService) {}
 
     @Post()
-    @UsePipes(new ValidationPipe({ transform: true }))
-    async createMessage(@Body() body: CreateMessageDto) {
-        const { topicId, content, sender } = body;
+    async createMessage(@Body() body: CreateMessageDto, @Req() req: Request) {
+        const user = req.session.user as User;
+        if (!user) {
+            throw new NotFoundException('User have not logged in yet!');
+        }
 
-        const message = await this.messageService.createMessage(topicId, content, sender);
+        if (body.sender == 'ai') {
+            throw new NotFoundException('AI is not allowed to be the sender in this situation')
+        }
+
+        const message = await this.messageService.createMessage(body.topicId, body.content, body.sender, user);
         return {
             message: 'Message created successfully',
             data: {
@@ -23,16 +31,19 @@ export class MessageController {
                     title: message.topic.title,
                     },
                 createdAt: message.createdAt,
-            }
+            },
+            user: user.username,
         }
     }
 
     
     @Get()
-    async findMessagesByTopic(@Query('topicId') topicId: number, content: string, sender: 'user'|'ai') {
+    async findMessagesByTopic(@Query('topicId') topicId: number, content: string, sender: 'user'|'ai', @Req() req: Request) {
+        const user = req.session.user as User;
         const messages = topicId
-        ? await this.messageService.findByTopic(topicId)
-        : await this.messageService.findAll(topicId, content, sender);
+        ? await this.messageService.findByTopic(topicId, user)
+        : await this.messageService.findAll(topicId, content, sender, user);
+        
 
         if (!messages || messages.length === 0) {
             throw new NotFoundException('No messages found for the given criteria');
@@ -40,6 +51,7 @@ export class MessageController {
         return {
             message: 'Messages retrieved successfully',
             data: messages,
+            user: user.username
         };
     }
 }
