@@ -3,11 +3,13 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
 
 import * as bcrypt from 'bcrypt';
+import { Message } from "src/message/message.entity";
 
 @Entity("user")
 export class User {
@@ -22,6 +24,9 @@ export class User {
 
     @Column({ nullable: false })
     password: string;
+
+    @OneToMany(() => Message, message => message.user)
+    messages: Message[];
 
     // automatically set the timestamp when the user is created
     @CreateDateColumn()
