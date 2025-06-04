@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
@@ -8,12 +8,15 @@ import { Request } from 'express';
 import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/signup-user.dto';
 
+import { EmailService } from 'src/email/email.service';
+
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        private readonly emailService: EmailService,
     ) {}
     
     // validate user credentials
@@ -73,7 +76,7 @@ export class AuthService {
         return {
             message: 'Login successful',
             session: req.session,
-        };
+            };
         }
 
 
@@ -98,6 +101,33 @@ export class AuthService {
             throw new UnauthorizedException('User not authenticated');
         }
         return { user: { id: user.id, email: user.email, username: user.username } };
+    }
+
+    async forgotPassword(email: string): Promise<void> {
+        const user = await this.userRepository.findOne({ where: { email } });
+
+        if (!user) {
+            throw new NotFoundException(`No user found for email: ${email}`);
+        }
+        await this.emailService.sendResetPasswordLink(email);
+    }
+
+    async resetPassword(token: string, password: string): Promise<void> {
+        const email = await this.emailService.decodeConfirmationToken(token);
+
+        const user = await this.userRepository.findOne({ where: { email } });
+        if (!user) {
+            throw new NotFoundException(`No user found for email: ${email}`);
+        }
+
+        // Hash the new password (example using bcrypt)
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        user.password = hashedPassword;
+        user.resetToken = '';
+        user.resetTokenExpiresAt = new Date();
+
+        await this.userRepository.save(user); // ✅ Save updated user
     }
 }
 

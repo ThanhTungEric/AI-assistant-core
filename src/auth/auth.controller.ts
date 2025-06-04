@@ -10,7 +10,7 @@ import { LocalGuard } from './guards/local.guard';
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @Post('signup')
+    @Post()
     // register a new user
     async signup(@Body() signupDto: SignUpDto) {
         return this.authService.signup(signupDto);
@@ -37,5 +37,10 @@ export class AuthController {
             throw new UnauthorizedException('User not authenticated');
         }
         return { session: req.session };
+    }
+
+    @Post('forgot-password')
+    async forgotPassword(@Body('email') email: string) {
+        return this.authService.forgotPassword(email);
     }
 }

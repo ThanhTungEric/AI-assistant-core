@@ -24,10 +24,15 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        maxAge: 20 * 60 * 1000, // 20 minutes
       },
     })
   )
+
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true
+  })
 
   app.use(passport.initialize())
   app.use(passport.session())

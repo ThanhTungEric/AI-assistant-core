@@ -42,6 +42,14 @@ export class User {
         const saltRounds = 10;
         this.password = await bcrypt.hash(this.password, saltRounds);
     }
+
+    // token used to reset the user password
+    @Column({ nullable: true })
+    resetToken: string;
+
+    // expiration time for the reset token
+    @Column({ type: 'timestamp', nullable: true })
+    resetTokenExpiresAt: Date;
 }
 
 
