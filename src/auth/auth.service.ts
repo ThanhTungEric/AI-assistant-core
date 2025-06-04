@@ -14,8 +14,8 @@ export class AuthService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
-    ) {}
-    
+    ) { }
+
     // validate user credentials
     async validateUser(login: string, password: string): Promise<User> {
         const isEmail = login.includes('@');
@@ -34,8 +34,8 @@ export class AuthService {
         }
 
         return user;
-        }
-    
+    }
+
     // register a new user and hash the password
     async signup(signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string; username: string } }> {
         const { email, password, username } = signupDto;
@@ -68,13 +68,13 @@ export class AuthService {
             username: user.username,
         };
 
-        req.session.save(() => {}); // optionally handle error here
+        req.session.save(() => { });
 
         return {
             message: 'Login successful',
             session: req.session,
         };
-        }
+    }
 
 
     async logout(request: Request): Promise<{ message: string, session: any }> {
