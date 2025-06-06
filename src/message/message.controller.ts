@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { Request } from 'express';
@@ -13,15 +13,15 @@ import { MessageService } from './message.service';
     type: MessageResponseDto,
 })
 
-@Controller('users/message')
+@Controller('users')
 export class MessageController {
     constructor(private readonly messageService: MessageService) {}
 
-    @Post()
+    @Post('message')
     async createMessage(@Body() body: CreateMessageDto, @Req() req: Request) {
         const user = req.session.user as User;
         if (!user) {
-            throw new NotFoundException('User have not logged in yet!');
+            throw new UnauthorizedException('User have not logged in yet!');
         }
 
         if (body.sender == 'ai') {
