@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 
 import * as bcrypt from 'bcrypt';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/signup-user.dto';
 
@@ -80,18 +80,18 @@ export class AuthService {
         }
 
 
-    async logout(request: Request): Promise<{ message: string, session: any }> {
-        return new Promise((resolve, reject) => {
-            request.session.destroy((err) => {
-                if (err) {
-                    reject(new UnauthorizedException('Logout failed'));
-                } else {
-                    resolve({
-                        message: 'Logout successful',
-                        session: request.session,
-                    });
-                }
-            });
+    logout(req: Request, res: Response) {
+        req.session.destroy((err) => {
+            if (err) {
+                res.status(401).json({ message: 'Logout failed' });
+            } else {
+                console.log('Logout successful');
+                res.clearCookie('connect.sid');
+                res.status(200).json({
+                    message: 'Logout successful',
+                    session: null,
+                });
+            }
         });
     }
 
@@ -127,7 +127,7 @@ export class AuthService {
         user.resetToken = '';
         user.resetTokenExpiresAt = new Date();
 
-        await this.userRepository.save(user); // ✅ Save updated user
+        await this.userRepository.save(user);
     }
 }
 

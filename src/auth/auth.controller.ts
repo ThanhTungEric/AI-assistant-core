@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/signup-user.dto';
 import { LocalGuard } from './guards/local.guard';
+import { SessionGuard } from './guards/session.guard';
 
 
 @Controller('users/auth')
@@ -23,14 +24,16 @@ export class AuthController {
         return this.authService.login(req, loginDto);
     }
 
+    
     @Post('logout')
     // logout a user
-    logout(@Req() req: Request): Promise<{ message: string }> {
-        return this.authService.logout(req);
+    logout(@Req() req: Request, @Res() res: Response) {
+        return this.authService.logout(req, res);
     }
 
+    @UseGuards(SessionGuard)
     @Get('profile')
-    // get the profile of the logged-in user
+    // get the profile of the logged-in user (session)
     getProfile(@Req() req: Request): { session: any } {
         const user = req.session.user;
         if (!user || !req.session) {
