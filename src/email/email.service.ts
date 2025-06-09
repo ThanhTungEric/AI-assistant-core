@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { createTransport } from 'nodemailer';
 import * as Mail from 'nodemailer/lib/mailer';
 import { User } from 'src/user/user.entity';
@@ -37,7 +38,7 @@ export class EmailService {
     public async decodeConfirmationToken(token: string) {
         try {
             const payload = await this.jwtService.verify(token, {
-                secret: this.configService.get('JWT_VERIFICATION_TOKEN_SECRET')
+                secret: this.configService.get('JWT_VERIFICATION_TOKEN_SECRET'),
             });
 
             if (typeof payload === 'object' && 'email' in payload) {
@@ -54,28 +55,49 @@ export class EmailService {
         }
     }
 
-    public async sendResetPasswordLink(email: string): Promise<void> {
-        const payload = { email };
-
-        const token = this.jwtService.sign(payload, {
-            secret: this.configService.get('JWT_VERIFICATION_TOKEN_SECRET'),
-            expiresIn: `${this.configService.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME')}s`
-        });
-
+    public async sendResetPassword(email: string): Promise<void> {
         const user = await this.userRepository.findOne({ where: { email } });
         if (!user) {
             throw new BadRequestException('User not found');
         }
+
+        // Generate dummy temporary password
+        const generateRandomPassword = (length = 12): string => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        };
+
+        const dummyPassword = generateRandomPassword();
+
+        const payload = { email };
+        const token = this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_VERIFICATION_TOKEN_SECRET')
+        });
+
+        // Tracking expiry
+        const expiresAt = new Date(Date.now() + 60 * 1000);
+
+        // Update user with dummy password and token
+        user.password = await bcrypt.hash(dummyPassword, 10);
         user.resetToken = token;
+        user.resetTokenExpiresAt = expiresAt;
 
-        const url = `${this.configService.get('EMAIL_RESET_PASSWORD_URL')}?token=${token}`;
+        await this.userRepository.save(user);
 
-        const text = `Hi, \nTo reset your password, click here: ${url}`;
+        // Compose the email
+        const text = `Welcome,\n\nYour temporary password is: ${dummyPassword}\n\nThis password is valid until:  ${expiresAt.toISOString()}. Please log in and change your password as soon as possible.`;
 
-        return this.sendMail({
+        this.sendMail({
             to: email,
-            subject: 'Reset password',
+            subject: 'Your Temporary Password',
             text
+        }).catch(err => {
+            this.logger.error('Failed to send email:', err);
         });
     }
+
 }
