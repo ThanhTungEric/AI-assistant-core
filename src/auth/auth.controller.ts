@@ -5,6 +5,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/signup-user.dto';
 import { LocalGuard } from './guards/local.guard';
 import { SessionGuard } from './guards/session.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 
 @Controller('users/auth')
@@ -49,5 +50,9 @@ export class AuthController {
         return this.authService.forgotPassword(email);
     }
 
-    
+    @Post('reset-password')
+    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+        return await this.authService.resetPassword(resetPasswordDto);
+    }
+
 }

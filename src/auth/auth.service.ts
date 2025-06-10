@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
@@ -9,6 +9,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpDto } from './dto/signup-user.dto';
 
 import { EmailService } from 'src/email/email.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 
 @Injectable()
@@ -35,9 +36,8 @@ export class AuthService {
         if (!passwordMatch) {
             throw new UnauthorizedException('Invalid credentials');
         }
-
-        return user;
-        }
+            return user;
+    }
     
     // register a new user and hash the password
     async signup(signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string; username: string } }> {
@@ -112,5 +112,33 @@ export class AuthService {
         await this.emailService.sendResetPassword(email);
     }
 
+    public async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{message: string}> {
+        const { email, temporaryPassword, newPassword } = resetPasswordDto;
+        const user = await this.userRepository.findOne({ where: { email } });
+
+        if (!user || !user.isTemporaryPassword || !user.resetTokenExpiresAt) {
+            throw new BadRequestException('Reset not allowed');
+        }
+
+        if (user.resetTokenExpiresAt.getTime() < Date.now()) {
+            throw new BadRequestException('Temporary password expired');
+        }
+
+        const isValidTempPassword = await bcrypt.compare(temporaryPassword, user.tempPassword);
+
+        if (!isValidTempPassword) {
+            throw new BadRequestException('Temporary password is invalid');
+        }
+
+        // Set new password
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.isTemporaryPassword = false;
+
+        await this.userRepository.save(user);
+
+        return {
+            message : "Password reset successfully"
+        }
+    }
 }
 

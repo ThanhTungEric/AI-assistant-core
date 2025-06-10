@@ -53,6 +53,9 @@ export class User {
 
     @Column()
     isTemporaryPassword: boolean
+
+    @Column({ nullable: false })
+    tempPassword: string;
 }
 
 
