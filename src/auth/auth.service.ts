@@ -112,22 +112,5 @@ export class AuthService {
         await this.emailService.sendResetPassword(email);
     }
 
-    async resetPassword(token: string, password: string): Promise<void> {
-        const email = await this.emailService.decodeConfirmationToken(token);
-
-        const user = await this.userRepository.findOne({ where: { email } });
-        if (!user) {
-            throw new NotFoundException(`No user found for email: ${email}`);
-        }
-
-        // Hash the new password (example using bcrypt)
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        user.password = hashedPassword;
-        user.resetToken = '';
-        user.resetTokenExpiresAt = new Date();
-
-        await this.userRepository.save(user);
-    }
 }
 

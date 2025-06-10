@@ -9,7 +9,9 @@ import { SessionGuard } from './guards/session.guard';
 
 @Controller('users/auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+    ) {}
 
     @Post()
     // register a new user
@@ -46,4 +48,6 @@ export class AuthController {
     async forgotPassword(@Body('email') email: string) {
         return this.authService.forgotPassword(email);
     }
+
+    
 }

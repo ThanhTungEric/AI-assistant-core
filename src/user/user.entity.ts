@@ -50,6 +50,9 @@ export class User {
     // expiration time for the reset token
     @Column({ type: 'timestamp', nullable: true })
     resetTokenExpiresAt: Date;
+
+    @Column()
+    isTemporaryPassword: boolean
 }
 
 

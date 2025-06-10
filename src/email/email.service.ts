@@ -72,6 +72,7 @@ export class EmailService {
         };
 
         const dummyPassword = generateRandomPassword();
+        user.isTemporaryPassword = true;
 
         const payload = { email };
         const token = this.jwtService.sign(payload, {
@@ -79,7 +80,7 @@ export class EmailService {
         });
 
         // Tracking expiry
-        const expiresAt = new Date(Date.now() + 60 * 1000);
+        const expiresAt = new Date(Date.now() + 60 * 1000); // 1 minute
 
         // Update user with dummy password and token
         user.password = await bcrypt.hash(dummyPassword, 10);
