@@ -27,21 +27,27 @@ export class AuthService {
         const user = await this.userRepository.findOne({
             where: isEmail ? { email: login } : { username: login },
         });
-
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
-        }
+        };
 
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
             throw new UnauthorizedException('Invalid credentials');
         }
-            return user;
+        return user;
     }
     
     // register a new user and hash the password
     async signup(signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string; username: string } }> {
         const { email, password, username } = signupDto;
+
+         // Check if email already exists
+        const existingUser = await this.userRepository.findOne({ where: { email } });
+        if (existingUser) {
+            throw new BadRequestException('Email is already registered');
+        }
+
         const newUser = this.userRepository.create({
             email,
             password,
@@ -107,7 +113,7 @@ export class AuthService {
         const user = await this.userRepository.findOne({ where: { email } });
 
         if (!user) {
-            throw new NotFoundException(`No user found for email: ${email}`);
+            throw new NotFoundException(`No user found for that email`);
         }
         await this.emailService.sendResetPassword(email);
     }
@@ -116,21 +122,22 @@ export class AuthService {
         const { email, temporaryPassword, newPassword } = resetPasswordDto;
         const user = await this.userRepository.findOne({ where: { email } });
 
+        // check if reset is allowed or not
         if (!user || !user.isTemporaryPassword || !user.resetTokenExpiresAt) {
             throw new BadRequestException('Reset not allowed');
         }
 
-        if (user.resetTokenExpiresAt.getTime() < Date.now()) {
-            throw new BadRequestException('Temporary password expired');
-        }
-
+        // tempPassword comparison
         const isValidTempPassword = await bcrypt.compare(temporaryPassword, user.tempPassword);
-
         if (!isValidTempPassword) {
             throw new BadRequestException('Temporary password is invalid');
         }
 
-        // Set new password
+        // tempPassword expiration check
+        if (user.resetTokenExpiresAt.getTime() < Date.now()) {
+            throw new BadRequestException('Temporary password expired');
+        }
+        // set new password
         user.password = await bcrypt.hash(newPassword, 10);
         user.isTemporaryPassword = false;
 
