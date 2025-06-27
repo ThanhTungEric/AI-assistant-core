@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as session from 'express-session';
 import * as passport from 'passport';
-import { AppModule } from './app.module';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,7 +25,7 @@ async function bootstrap() {
       saveUninitialized: false,
       // session time
       cookie: {
-        maxAge: 30 * 60 * 1000,
+        maxAge: 60 * 1000,
         httpOnly: true,
       },
     })

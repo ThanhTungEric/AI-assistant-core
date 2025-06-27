@@ -14,7 +14,7 @@ import { LocalStrategy } from "./strategy/local.strategy";
         TypeOrmModule.forFeature([User]), PassportModule.register({ session: true }),
         EmailModule, JwtModule.register({
             secret: '1234',
-            signOptions: { expiresIn: '24h' }
+            signOptions: { expiresIn: '1h' }
         })
     ],
     controllers: [AuthController],

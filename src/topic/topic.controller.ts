@@ -11,7 +11,7 @@ export class TopicController {
     createTopic(@Body() createTopicDto: CreateTopicDto) {
         return this.topicService.createTopic(createTopicDto.title);
     }
-
+    
     @Get()
     findAll() {
         return this.topicService.findAll();

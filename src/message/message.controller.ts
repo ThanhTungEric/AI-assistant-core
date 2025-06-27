@@ -1,7 +1,8 @@
-import { Body, Controller, Get, NotFoundException, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { Request } from 'express';
+import { SessionGuard } from 'src/auth/guards/session.guard';
 import { User } from '../user/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageResponseDto } from './dto/message-response.dto';
@@ -17,18 +18,19 @@ import { MessageService } from './message.service';
 export class MessageController {
     constructor(private readonly messageService: MessageService) {}
 
+    @UseGuards(SessionGuard)
     @Post('message')
     async createMessage(@Body() body: CreateMessageDto, @Req() req: Request) {
-        const user = req.session.user as User;
-        if (!user) {
-            throw new UnauthorizedException('User have not logged in yet!');
+        const user = req.session.user;
+        if (!user || !req.session) {
+            throw new UnauthorizedException('User has not logged in yet!');
         }
 
         if (body.sender == 'ai') {
             throw new NotFoundException('AI is not allowed to be the sender in this situation')
         }
 
-        const message = await this.messageService.createMessage(body.topicId, body.content, body.sender, user);
+        const message = await this.messageService.createMessage(body.topicId, body.content, body.sender, user as User);
         
         const responseDto = plainToInstance(MessageResponseDto, {
                 id: message.id,

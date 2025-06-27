@@ -86,11 +86,10 @@ export class EmailService {
         // Update user with dummy password and token
         user.resetToken = token;
         user.resetTokenExpiresAt = expiresAt;
-
         await this.userRepository.save(user);
 
         // Compose the email
-        const text = `Welcome,\n\nYour temporary password is: ${dummyPassword}\n\nThis password is valid until:  ${expiresAt.toISOString()}. Please log in and change your password as soon as possible.`;
+        const text = `Welcome,\n\nYour temporary password is: ${dummyPassword}\n\nThis password is valid until: ${expiresAt.toLocaleString()}. Please log in and change your password as soon as possible.`;
 
         this.sendMail({
             to: email,
