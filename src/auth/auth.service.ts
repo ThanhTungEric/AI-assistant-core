@@ -2,12 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
-
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
-import { LoginUserDto } from './dto/login-user.dto';
-import { SignUpDto } from './dto/signup-user.dto';
-
+import { LoginUserDto } from './dto/login.dto';
+import { SignUpDto } from './dto/signup.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,10 +15,8 @@ export class AuthService {
         private readonly userRepository: Repository<User>,
     ) { }
 
-    // validate user credentials
     async validateUser(login: string, password: string): Promise<User> {
         const isEmail = login.includes('@');
-
         const user = await this.userRepository.findOne({
             where: isEmail ? { email: login } : { username: login },
         });
@@ -36,7 +33,6 @@ export class AuthService {
         return user;
     }
 
-    // register a new user and hash the password
     async signup(signupDto: SignUpDto): Promise<{ message: string; user: { id: number; email: string; username: string } }> {
         const { email, password, username } = signupDto;
         const newUser = this.userRepository.create({
@@ -56,10 +52,8 @@ export class AuthService {
         };
     }
 
-    // login a user and check the password
     async login(req: Request, loginDto: LoginUserDto): Promise<{ message: string; session: any }> {
         const { login, password } = loginDto;
-
         const user = await this.validateUser(login, password);
 
         req.session.user = {
@@ -67,7 +61,6 @@ export class AuthService {
             email: user.email,
             username: user.username,
         };
-
         req.session.save(() => { });
 
         return {
@@ -76,17 +69,13 @@ export class AuthService {
         };
     }
 
-
-    async logout(request: Request): Promise<{ message: string, session: any }> {
+    async logout(request: Request): Promise<{ message: string }> {
         return new Promise((resolve, reject) => {
             request.session.destroy((err) => {
                 if (err) {
                     reject(new UnauthorizedException('Logout failed'));
                 } else {
-                    resolve({
-                        message: 'Logout successful',
-                        session: request.session,
-                    });
+                    resolve({ message: 'Logout successful' });
                 }
             });
         });
@@ -97,7 +86,32 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
+        req.session.touch();
         return { user: { id: user.id, email: user.email, username: user.username } };
     }
-}
 
+    async forgotPassword(email: string): Promise<{ message: string }> {
+        const user = await this.userRepository.findOne({ where: { email } });
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+        return { message: 'Temporary password sent to email' };
+    }
+
+    async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+        const { email, temporaryPassword, newPassword } = resetPasswordDto;
+        const user = await this.userRepository.findOne({ where: { email } });
+
+        if (!user || user.temporaryPassword !== temporaryPassword) {
+            throw new UnauthorizedException('Invalid credentials or temporary password');
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await this.userRepository.update(user.id, {
+            password: hashedPassword,
+            temporaryPassword: undefined,
+        });
+
+        return { message: 'Password reset successfully' };
+    }
+}

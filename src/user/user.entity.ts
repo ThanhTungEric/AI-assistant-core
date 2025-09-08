@@ -10,6 +10,7 @@ import {
 
 import * as bcrypt from 'bcrypt';
 import { Message } from "src/message/message.entity";
+import { Topic } from "src/topic/topic.entity";
 
 @Entity("user")
 export class User {
@@ -25,25 +26,25 @@ export class User {
     @Column({ nullable: false })
     password: string;
 
+    @Column({ nullable: true })
+    temporaryPassword?: string;
+
     @OneToMany(() => Message, message => message.user)
     messages: Message[];
 
-    // automatically set the timestamp when the user is created
+
+    @OneToMany(() => Topic, (topic) => topic.user)
+    topics: Topic[];
+
     @CreateDateColumn()
     createdAt: Date;
 
-    // automatically set the timestamp when the user is updated
     @UpdateDateColumn()
     updatedAt: Date;
 
     @BeforeInsert()
-    // hash the password before inserting it into the database
     async hashPassword() {
         const saltRounds = 10;
         this.password = await bcrypt.hash(this.password, saltRounds);
     }
 }
-
-
-
-

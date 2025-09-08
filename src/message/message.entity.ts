@@ -10,10 +10,10 @@ export class Message {
     @Column()
     sender: 'user' | 'ai'
 
-    @Column()
+    @Column('text')
     content: string;
 
-    @ManyToOne(() => Topic, (topic) => topic.messages, {eager: true})
+    @ManyToOne(() => Topic, (topic) => topic.messages, { eager: true })
     topic: Topic;
 
     @ManyToOne(() => User, user => user.messages)

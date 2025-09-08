@@ -9,10 +9,7 @@ export class MessageResponseDto {
 
     @ApiProperty()
     sender: string;
-
-    @ApiProperty()
-    topicId: number;
-
+    
     @ApiProperty()
     topicTitle: string;
 

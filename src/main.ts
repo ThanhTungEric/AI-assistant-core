@@ -9,11 +9,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: ["http://localhost:5173", "https://portal.vgu.edu.vn/"],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  app.setGlobalPrefix('/api');
+  app.setGlobalPrefix('/chat');
 
   const config = new DocumentBuilder()
     .setTitle('AI-Assistant API')
@@ -31,7 +32,10 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        maxAge: 1000 * 60 * 15,
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
       },
     })
   )
@@ -39,6 +43,6 @@ async function bootstrap() {
   app.use(passport.initialize())
   app.use(passport.session())
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

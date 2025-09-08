@@ -1,14 +1,21 @@
 import { Message } from 'src/message/message.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/user/user.entity';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class Topic {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @OneToMany(() => Message, (message: Message) => message.topic)
-    messages: Message[];
+  @ManyToOne(() => User, (user) => user.topics, { eager: true })
+  user: User;
+
+  @OneToMany(() => Message, (message: Message) => message.topic)
+  messages: Message[];
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

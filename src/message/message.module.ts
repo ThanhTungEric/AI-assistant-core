@@ -5,6 +5,7 @@ import { TopicModule } from 'src/topic/topic.module';
 import { MessageController } from './message.controller';
 import { Message } from './message.entity';
 import { MessageService } from './message.service';
+import { GeminiService } from './gemini.service'; // Adjusted import path for GeminiService
 
 @Module({
     imports: [
@@ -12,6 +13,6 @@ import { MessageService } from './message.service';
         TopicModule,
     ],
     controllers: [MessageController],
-    providers: [MessageService],
+    providers: [MessageService, GeminiService],
 })
 export class MessageModule {}
