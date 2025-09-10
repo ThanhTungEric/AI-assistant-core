@@ -37,8 +37,13 @@ export class UserController {
 
 
     @Get('email/:email')
-    async findByEmail(@Param('email') email: string): Promise<{ message: string; user: { id: number; email: string; fullName: string } }> {
+    async findByEmail(
+        @Param('email') email: string,
+    ): Promise<{ message: string; user: { id: number; email: string; fullName: string } }> {
         const user = await this.userService.findByEmail(email);
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
         return {
             message: `User with email ${user.email} retrieved successfully`,
             user: {
@@ -48,6 +53,7 @@ export class UserController {
             },
         };
     }
+
 
     @Patch(':id/fullName')
     async updateFullName(

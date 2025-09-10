@@ -1,11 +1,11 @@
 import { IsString, IsEmail, MinLength } from 'class-validator';
 
 export class SignUpDto {
-    @IsEmail()  // Kiểm tra định dạng email
+    @IsEmail()
     email: string;
 
     @IsString()
-    @MinLength(6)  // Đảm bảo mật khẩu có ít nhất 6 ký tự
+    @MinLength(6)
     password: string;
 
     @IsString()

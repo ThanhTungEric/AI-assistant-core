@@ -18,4 +18,7 @@ export class Topic {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: 0 })
+  renameCount: number;
 }

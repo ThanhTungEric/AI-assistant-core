@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class MessageResponseDto {
     @ApiProperty()
@@ -9,9 +9,9 @@ export class MessageResponseDto {
 
     @ApiProperty()
     sender: string;
-    
+
     @ApiProperty()
-    topicTitle: string;
+    topicId: number;
 
     @ApiProperty()
     createdAt: Date;

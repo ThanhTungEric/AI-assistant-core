@@ -43,6 +43,7 @@ export class AuthService {
         };
     }
 
+
     async validateUser(login: string, password: string): Promise<User> {
         const user = await this.userService.findByEmail(login);
         if (!user) {
@@ -56,6 +57,7 @@ export class AuthService {
 
         return user;
     }
+
 
     getProfile(req: any): ProfileResponse {
         const user = req.user;

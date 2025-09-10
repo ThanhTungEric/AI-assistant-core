@@ -1,9 +1,7 @@
-// src/topic/topic.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Topic } from './topic.entity';
-import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class TopicService {
@@ -12,12 +10,15 @@ export class TopicService {
         private readonly topicRepository: Repository<Topic>,
     ) { }
 
-    async createForUser(title: string, user: User): Promise<Topic> {
-        const topic = this.topicRepository.create({ title, user });
+    async createForUser(title: string, user: { id: number }): Promise<Topic> {
+        const topic = this.topicRepository.create({
+            title,
+            user: { id: user.id } as any,
+        });
         return this.topicRepository.save(topic);
     }
 
-    async findAllByUser(user: User): Promise<Partial<Topic>[]> {
+    async findAllByUser(user: { id: number }): Promise<Partial<Topic>[]> {
         return this.topicRepository.find({
             where: { user: { id: user.id } },
             order: { createdAt: 'DESC' },
@@ -25,7 +26,7 @@ export class TopicService {
         });
     }
 
-    async findTopicById(topicId: number, user: User): Promise<Topic> {
+    async findTopicById(topicId: number, user: { id: number }): Promise<Topic> {
         const topic = await this.topicRepository.findOne({
             where: { id: topicId, user: { id: user.id } },
         });
@@ -37,11 +38,19 @@ export class TopicService {
         return topic;
     }
 
-    async findWithMessages(user: User): Promise<Topic[]> {
+    async findWithMessages(user: { id: number }): Promise<Topic[]> {
         return this.topicRepository.find({
             where: { user: { id: user.id } },
             relations: ['messages'],
             order: { createdAt: 'DESC' },
         });
+    }
+
+
+    async updateTitleAndCount(topicId: number, title: string): Promise<void> {
+        await this.topicRepository.query(
+            `UPDATE \`topic\` SET \`title\` = ?, \`renameCount\` = \`renameCount\` + 1 WHERE \`id\` = ?`,
+            [title, topicId]
+        );
     }
 }
