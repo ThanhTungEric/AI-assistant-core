@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+// src/topic/topic.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Topic } from './topic.entity';
@@ -11,24 +12,35 @@ export class TopicService {
         private readonly topicRepository: Repository<Topic>,
     ) { }
 
-    createTopic(title: string) {
-        const topic = this.topicRepository.create({ title });
+    async createForUser(title: string, user: User): Promise<Topic> {
+        const topic = this.topicRepository.create({ title, user });
         return this.topicRepository.save(topic);
     }
 
-    findAll() {
+    async findAllByUser(user: User): Promise<Partial<Topic>[]> {
         return this.topicRepository.find({
-            relations: ['messages'],
-            order: {
-                createdAt: 'DESC',
-            },
+            where: { user: { id: user.id } },
+            order: { createdAt: 'DESC' },
+            select: ['id', 'title', 'createdAt'],
         });
     }
 
+    async findTopicById(topicId: number, user: User): Promise<Topic> {
+        const topic = await this.topicRepository.findOne({
+            where: { id: topicId, user: { id: user.id } },
+        });
 
-    async findTopicsByUser(user: User) {
+        if (!topic) {
+            throw new NotFoundException('Topic not found or does not belong to user');
+        }
+
+        return topic;
+    }
+
+    async findWithMessages(user: User): Promise<Topic[]> {
         return this.topicRepository.find({
             where: { user: { id: user.id } },
+            relations: ['messages'],
             order: { createdAt: 'DESC' },
         });
     }

@@ -1,43 +1,49 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Post, Req, Get, UseGuards, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { LocalGuard } from './guards/local.guard';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { LoginResponse, RegisterResponse } from './dto/auth.dto';
+import { Request } from 'express';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Response } from 'express';
 
 @Controller('users/auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
 
     @Post('signup')
-    async signup(@Body() signupDto: SignUpDto) {
+    async signup(@Body() signupDto: SignUpDto): Promise<RegisterResponse> {
         return this.authService.signup(signupDto);
     }
 
-    @UseGuards(LocalGuard)
     @Post('login')
-    async login(@Req() req: Request, @Body() loginDto: LoginUserDto) {
-        return this.authService.login(req, loginDto);
+    async login(@Body() loginDto: LoginUserDto, @Res() res: Response) {
+        const { accessToken, refreshToken, message } = await this.authService.login(loginDto);
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.json({ message, accessToken });
     }
 
-    @Post('logout')
-    async logout(@Req() req: Request): Promise<{ message: string }> {
-        return this.authService.logout(req);
+    @Post('refresh')
+    async refresh(@Req() req: Request) {
+        return this.authService.refreshAccessToken(req);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('profile')
-    getProfile(@Req() req: Request): { user: { id: number; email: string; username: string } } {
+    async getProfile(@Req() req: Request) {
         return this.authService.getProfile(req);
     }
 
-    @Post('forgot-password')
-    async forgotPassword(@Body('email') email: string) {
-        return this.authService.forgotPassword(email);
-    }
-
-    @Post('reset-password')
-    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-        return this.authService.resetPassword(resetPasswordDto);
+    @Post('logout')
+    async logout(@Res() res: Response) {
+        res.clearCookie('refreshToken');
+        return res.json({ message: 'Logout successful' });
     }
 }

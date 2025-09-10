@@ -1,10 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as session from 'express-session';
-import * as passport from 'passport';
 import { AppModule } from './app.module';
-
+import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -18,31 +16,19 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('AI-Assistant API')
-    .setDescription('API Document')
+    .setDescription('API Documentation')
     .setVersion('1.0')
     .addTag('')
-    .build()
+    .build();
+
+  app.use(cookieParser());
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-doc', app, documentFactory)
+  SwaggerModule.setup('api-doc', app, documentFactory);
 
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || 'default_secret',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: 1000 * 60 * 15,
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
-      },
-    })
-  )
 
-  app.use(passport.initialize())
-  app.use(passport.session())
   app.useGlobalPipes(new ValidationPipe());
+
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

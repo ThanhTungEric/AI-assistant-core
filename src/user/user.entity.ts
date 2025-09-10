@@ -8,7 +8,6 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 
-import * as bcrypt from 'bcrypt';
 import { Message } from "src/message/message.entity";
 import { Topic } from "src/topic/topic.entity";
 
@@ -17,8 +16,8 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true, nullable: false })
-    username: string;
+    @Column({ nullable: false })
+    fullName: string;
 
     @Column({ unique: true, nullable: false })
     email: string;
@@ -26,12 +25,11 @@ export class User {
     @Column({ nullable: false })
     password: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'varchar', length: 255 })
     temporaryPassword?: string;
 
-    @OneToMany(() => Message, message => message.user)
+    @OneToMany(() => Message, (message) => message.user)
     messages: Message[];
-
 
     @OneToMany(() => Topic, (topic) => topic.user)
     topics: Topic[];
@@ -42,9 +40,4 @@ export class User {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @BeforeInsert()
-    async hashPassword() {
-        const saltRounds = 10;
-        this.password = await bcrypt.hash(this.password, saltRounds);
-    }
 }

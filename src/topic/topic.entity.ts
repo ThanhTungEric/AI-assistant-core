@@ -10,7 +10,7 @@ export class Topic {
   @Column()
   title: string;
 
-  @ManyToOne(() => User, (user) => user.topics, { eager: true })
+  @ManyToOne(() => User, (user) => user.topics)
   user: User;
 
   @OneToMany(() => Message, (message: Message) => message.topic)
